@@ -14,3 +14,9 @@ Use `pnpm dev` com Node 22+. `pnpm db:generate` gera migrações; o processo de 
 
 ## Próximas etapas para coleta real
 Validar uma fonte, implementar e testar adaptador específico se não houver JSON-LD, acrescentar descoberta/paginação, agendar execução externa e registrar histórico de falhas. Validar regras e acesso de cada portal antes de ativar. A plataforma e o coletor base estão implementados; a integração real com os quatro portais permanece pendente.
+
+## Vercel
+
+O projeto agora usa Next.js/Node.js e está preparado para Vercel. `vercel.json` agenda `/api/cron/collect` diariamente às 08:00 UTC. Configure `CRON_SECRET` no projeto antes de produção; a rota rejeita chamadas sem `Authorization: Bearer`. Configure `INGEST_TOKEN` se for enviar lotes pelo endpoint `/api/ingest`.
+
+Nesta versão o armazenamento é temporário por instância para manter o protótipo compatível sem banco externo. Para favoritos e vagas persistirem em produção, conecte Postgres/KV pelo Storage da Vercel e troque o adaptador `lib/database.ts`.

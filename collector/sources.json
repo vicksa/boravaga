@@ -1,11 +1,110 @@
 [
-  {"name":"Greenhouse — empresa autorizada","type":"greenhouse","enabled":false,"company":"Nome da empresa","board_token":"TOKEN_DO_BOARD","delay_seconds":3},
-  {"name":"Lever — empresa autorizada","type":"lever","enabled":false,"company":"Nome da empresa","site":"SUBDOMINIO_DA_EMPRESA","delay_seconds":3},
-  {"name":"Workable — empresa autorizada","type":"workable","enabled":false,"company":"Nome da empresa","account":"SLUG_DA_EMPRESA","delay_seconds":3},
-  {"name":"BreezyHR — empresa autorizada","type":"breezy","enabled":false,"company":"Nome da empresa","company_slug":"SLUG_DA_EMPRESA","delay_seconds":3},
-  {"name":"Recruitee — empresa autorizada","type":"recruitee","enabled":false,"company":"Nome da empresa","company_slug":"SLUG_DA_EMPRESA","delay_seconds":3},
-  {"name":"SmartRecruiters — empresa autorizada","type":"smartrecruiters","enabled":false,"company":"Nome da empresa","company_slug":"SLUG_DA_EMPRESA","delay_seconds":3},
-  {"name":"Gupy — empresa autorizada","type":"gupy","enabled":false,"company":"Nome da empresa","company_slug":"SLUG_DA_EMPRESA","delay_seconds":3},
-  {"name":"Personio — empresa autorizada","type":"personio","enabled":false,"company":"Nome da empresa","url":"https://careers.exemplo.com/xml","delay_seconds":3},
-  {"name":"Página pública autorizada","type":"jsonld","enabled":false,"allowed_hosts":["careers.exemplo.com"],"urls":["https://careers.exemplo.com/jobs"],"delay_seconds":3}
+  {
+    "name": "Pague Menos e Extrafarma",
+    "type": "gupy",
+    "enabled": true,
+    "company": "Pague Menos e Extrafarma",
+    "company_slug": "paguemenosextrafarma",
+    "delay_seconds": 3
+  },
+  {
+    "name": "Bosch",
+    "type": "smartrecruiters",
+    "enabled": true,
+    "company": "Bosch",
+    "company_slug": "BoschGroup",
+    "delay_seconds": 3
+  },
+  {
+    "name": "TOPdesk",
+    "type": "smartrecruiters",
+    "enabled": true,
+    "company": "TOPdesk",
+    "company_slug": "TOPdesk",
+    "delay_seconds": 3
+  },
+  {
+    "name": "KOSTAL",
+    "type": "smartrecruiters",
+    "enabled": true,
+    "company": "KOSTAL",
+    "company_slug": "KOSTALGroup",
+    "delay_seconds": 3
+  },
+  {
+    "name": "Nielsen",
+    "type": "smartrecruiters",
+    "enabled": true,
+    "company": "Nielsen",
+    "company_slug": "TheNielsenCompany",
+    "delay_seconds": 3
+  },
+  {
+    "name": "Greenhouse — empresa autorizada",
+    "type": "greenhouse",
+    "enabled": false,
+    "company": "Nome da empresa",
+    "board_token": "TOKEN_DO_BOARD",
+    "delay_seconds": 3
+  },
+  {
+    "name": "Lever — empresa autorizada",
+    "type": "lever",
+    "enabled": false,
+    "company": "Nome da empresa",
+    "site": "SUBDOMINIO_DA_EMPRESA",
+    "delay_seconds": 3
+  },
+  {
+    "name": "Workable — empresa autorizada",
+    "type": "workable",
+    "enabled": false,
+    "company": "Nome da empresa",
+    "account": "SLUG_DA_EMPRESA",
+    "delay_seconds": 3
+  },
+  {
+    "name": "BreezyHR — empresa autorizada",
+    "type": "breezy",
+    "enabled": false,
+    "company": "Nome da empresa",
+    "company_slug": "SLUG_DA_EMPRESA",
+    "delay_seconds": 3
+  },
+  {
+    "name": "Recruitee — empresa autorizada",
+    "type": "recruitee",
+    "enabled": false,
+    "company": "Nome da empresa",
+    "company_slug": "SLUG_DA_EMPRESA",
+    "delay_seconds": 3
+  },
+  {
+    "name": "Gupy — empresa autorizada",
+    "type": "gupy",
+    "enabled": false,
+    "company": "Nome da empresa",
+    "company_slug": "SLUG_DA_EMPRESA",
+    "delay_seconds": 3
+  },
+  {
+    "name": "Personio — empresa autorizada",
+    "type": "personio",
+    "enabled": false,
+    "company": "Nome da empresa",
+    "url": "https://careers.exemplo.com/xml",
+    "delay_seconds": 3
+  },
+  {
+    "name": "Página pública autorizada",
+    "type": "jsonld",
+    "enabled": false,
+    "allowed_hosts": [
+      "careers.exemplo.com"
+    ],
+    "urls": [
+      "https://careers.exemplo.com/jobs"
+    ],
+    "delay_seconds": 3
+  }
 ]

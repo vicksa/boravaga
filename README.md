@@ -8,12 +8,12 @@ Busca textual sem distinção de acentos, filtros combinados, detalhes e favorit
 Use `pnpm dev` com Node 22+. `pnpm db:generate` gera migrações; o processo de publicação aplica as migrações D1. Para preview local, veja as instruções do starter em scripts. O endpoint GET /api/jobs só retorna anúncios não expirados. Favoritos ficam vinculados a um cookie HttpOnly: não sincronizam entre aparelhos; apagar cookies perde o vínculo.
 
 ## Coleta
-`python collector/collect.py` lê collector/sources.json. Por padrão todas as fontes estão desativadas. Depois de validar uma fonte e sua permissão de acesso, preencha URLs públicas individuais de anúncios e habilite a fonte. O extrator procura JobPosting em JSON-LD (incluindo @graph), consulta robots.txt, aplica intervalo e limite de resposta, não faz login nem contorna bloqueios. Páginas sem JSON-LD exigem um adaptador específico ainda não implementado. Ausência de informação vira 'Não informado'. FULL_TIME não implica CLT. Deduplicação por cargo, empresa e localidade pode agrupar vagas diferentes; em produção deverá preservar todas as origens e usar identificadores mais específicos.
+`python collector/collect.py` lê collector/sources.json. Por padrão todas as fontes estão desativadas. Depois de validar uma fonte e sua permissão de acesso, preencha URLs públicas individuais de anúncios e habilite a fonte. O extrator procura JobPosting em JSON-LD (incluindo @graph), consulta robots.txt, aplica intervalo e limite de resposta, não faz login nem contorna bloqueios. Além de JSON-LD, o coletor possui adaptadores para Greenhouse, Lever, Workable, BreezyHR, Recruitee, SmartRecruiters, Gupy e Personio. Ausência de informação vira 'Não informado'. FULL_TIME não implica CLT. Deduplicação por cargo, empresa e localidade pode agrupar vagas diferentes; em produção deverá preservar todas as origens e usar identificadores mais específicos.
 
 `python collector/collect.py --send` envia os lotes. Configure BORAVAGA_URL e INGEST_TOKEN no processo e o mesmo INGEST_TOKEN como segredo do site. Sem segredo o endpoint permanece fechado. Não coloque o token no frontend ou no Git. A expiração usa validThrough; anúncios sem essa data precisam de verificação periódica futura. Não apresentar a demonstração como dados coletados.
 
 ## Próximas etapas para coleta real
-Validar uma fonte, implementar e testar adaptador específico se não houver JSON-LD, acrescentar descoberta/paginação, agendar execução externa e registrar histórico de falhas. Validar regras e acesso de cada portal antes de ativar. A plataforma e o coletor base estão implementados; a integração real com os quatro portais permanece pendente.
+Validar uma fonte, conferir paginação e registrar falhas antes de ativar em produção. A plataforma e os adaptadores estão implementados, mas cada empresa precisa fornecer seu identificador público e autorizar o uso do feed.
 
 ## Vercel
 
@@ -23,7 +23,7 @@ Nesta versão o armazenamento é temporário por instância para manter o protó
 
 ## Feeds públicos autorizados
 
-A coleta agora aceita três formatos: `greenhouse` (endpoint público `boards-api.greenhouse.io`), `lever` (endpoint público `api.lever.co`) e `jsonld` (página de carreiras com `JobPosting` em JSON-LD). As fontes vêm desligadas em `collector/sources.json`: troque os placeholders por uma empresa que autorizou o uso, habilite somente aquela entrada e teste antes de publicar. Greenhouse e Lever exigem o identificador público do board da própria empresa; não use o identificador de um portal sem autorização.
+A coleta aceita `greenhouse`, `lever`, `workable`, `breezy`, `recruitee`, `smartrecruiters`, `gupy`, `personio` e `jsonld`. Todas as entradas vêm desligadas em `collector/sources.json`: troque os placeholders pelo identificador público de uma empresa que autorizou o uso, habilite somente aquela entrada e teste antes de publicar. O filtro global mantém apenas vagas de T.I., usando título, descrição, área e equipe; cargos sem sinais de tecnologia são descartados.
 
 Exemplo:
 

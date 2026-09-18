@@ -6,13 +6,19 @@ Suporta:
 - Lever Postings API pública.
 Nunca faz login, contorna CAPTCHA ou ignora robots.txt.
 """
-import argparse, datetime, hashlib, html, json, os, re, time
+import argparse, datetime, hashlib, html, json, os, re, time, xml.etree.ElementTree as ET
 from html.parser import HTMLParser
 from urllib.request import Request, urlopen
 from urllib.robotparser import RobotFileParser
 from urllib.parse import urlparse
 
-UA = 'BoraVagaAcademic/0.2'
+UA = 'BoraVagaAcademic/0.3'
+
+IT_KEYWORDS = re.compile(r'\b( tecnologia | ti | it | software | desenvolv | program | front[- ]?end | back[- ]?end | full[- ]?stack | devops | dados | data | analista de sistemas | qa | qualidade de software | suporte técnico | infraestrutura | cloud | nuvem | segurança da informação | cibersegurança | ux | ui | product designer | mobile | android | ios | banco de dados | machine learning | inteligência artificial | ia | scrum master | product manager )\b', re.I | re.X)
+
+def is_it_job(job):
+    text = ' '.join(str(job.get(key, '')) for key in ('title', 'description', 'area', 'department', 'team'))
+    return bool(IT_KEYWORDS.search(text))
 class Parser(HTMLParser):
     def __init__(self): super().__init__(); self.inside=False; self.parts=[]; self.scripts=[]
     def handle_starttag(self, tag, attrs):
@@ -80,6 +86,49 @@ def normalize(j,source,url,kind='jsonld'):
     key='|'.join([title,company,location]).casefold()
     return dict(id=hashlib.sha256(key.encode()).hexdigest(),title=title,company=company,location=location,level=level,type=employment,mode=mode,area=area or 'Não informado',salary='Salário não informado',source=source.get('name','Fonte pública'),url=link,description=clean(description),tags=[clean(t) for t in tags if isinstance(t,str)][:20],checked=datetime.datetime.now(datetime.timezone.utc).isoformat().replace('+00:00','Z'),expires=expires)
 
+def normalize_workable(job, source, url):
+    job_url = job.get('url') or job.get('shortcode')
+    if job_url and not str(job_url).startswith('http'):
+        job_url = f"https://apply.workable.com/{source.get('account')}/j/{job_url}/"
+    return normalize({'title': job.get('title', ''), 'description': job.get('description', ''), 'hiringOrganization': {'name': source.get('company', 'Não informado')}, 'jobLocation': {'address': {'addressLocality': job.get('location', 'Não informado')}}, 'employmentType': job.get('employment_type', 'Não informado')}, source, job_url or url)
+
+
+def normalize_breezy(job, source, url):
+    job_url = job.get('url') or job.get('friendly_url') or url
+    return normalize({'title': job.get('name', job.get('title', '')), 'description': job.get('description', ''), 'hiringOrganization': {'name': source.get('company', 'Não informado')}, 'jobLocation': {'address': {'addressLocality': job.get('location', 'Não informado')}}, 'employmentType': job.get('type', 'Não informado')}, source, job_url)
+
+
+def normalize_recruitee(job, source, url):
+    job_url = job.get('careers_url') or job.get('url') or url
+    location = job.get('location') or job.get('city') or 'Não informado'
+    return normalize({'title': job.get('title', ''), 'description': job.get('description', ''), 'hiringOrganization': {'name': source.get('company', 'Não informado')}, 'jobLocation': {'address': {'addressLocality': location}}, 'employmentType': job.get('employment_type', 'Não informado')}, source, job_url)
+
+
+def normalize_smartrecruiters(job, source, url):
+    sections = (job.get('jobAd') or {}).get('sections') or {}
+    description = ' '.join(str(v.get('text', '')) if isinstance(v, dict) else str(v) for v in sections.values())
+    location = (job.get('location') or {}).get('city') or (job.get('location') or {}).get('country') or 'Não informado'
+    ref = job.get('ref') or job.get('id', '')
+    link = f"https://jobs.smartrecruiters.com/{source.get('company_slug')}/{ref}"
+    return normalize({'title': job.get('name', ''), 'description': description, 'hiringOrganization': {'name': source.get('company', 'Não informado')}, 'jobLocation': {'address': {'addressLocality': location}}, 'employmentType': (job.get('typeOfEmployment') or {}).get('label', 'Não informado')}, source, link)
+
+
+def normalize_gupy(job, source, url):
+    job_url = job.get('jobUrl') or job.get('url') or job.get('applicationUrl') or url
+    location = job.get('city') or job.get('location') or 'Não informado'
+    return normalize({'title': job.get('name', job.get('title', '')), 'description': job.get('description', ''), 'hiringOrganization': {'name': source.get('company', 'Não informado')}, 'jobLocation': {'address': {'addressLocality': location}}, 'employmentType': job.get('type', 'Não informado')}, source, job_url)
+
+
+def normalize_personio(job, source, url):
+    return normalize({'title': job.get('name', job.get('title', '')), 'description': job.get('jobDescription', job.get('description', '')), 'hiringOrganization': {'name': source.get('company', 'Não informado')}, 'jobLocation': {'address': {'addressLocality': job.get('office', job.get('location', 'Não informado'))}}, 'employmentType': job.get('employmentType', 'Não informado')}, source, job.get('url', url))
+
+
+def normalize_personio_xml(node, source, url):
+    def value(name):
+        child = node.find(f'.//{name}')
+        return child.text if child is not None and child.text else ''
+    return normalize_personio({'title': value('name') or value('jobTitle'), 'description': value('jobDescription'), 'location': value('office') or value('location'), 'url': value('jobUrl')}, source, url)
+
 def allowed(url):
     parts=urlparse(url)
     if parts.scheme!='https' or not parts.hostname: raise ValueError('A URL precisa usar HTTPS')
@@ -88,17 +137,74 @@ def allowed(url):
     return max(3,robots.crawl_delay(UA) or 0)
 
 def fetch_source(source):
-    kind=source.get('type','jsonld'); rows=[]
-    if kind=='greenhouse':
-        token=source.get('board_token'); url=f'https://boards-api.greenhouse.io/v1/boards/{token}/jobs?content=true'; payload=json.loads(read(url)); rows=[normalize(j,source,url,'greenhouse') for j in payload.get('jobs',[])]
-    elif kind=='lever':
-        site=source.get('site'); url=f'https://api.lever.co/v0/postings/{site}?mode=json'; payload=json.loads(read(url)); rows=[normalize(j,source,url,'lever') for j in payload]
+    kind = source.get('type', 'jsonld')
+    rows = []
+
+    if kind == 'greenhouse':
+        token = source.get('board_token')
+        url = f'https://boards-api.greenhouse.io/v1/boards/{token}/jobs?content=true'
+        payload = json.loads(read(url))
+        rows = [normalize(job, source, url, 'greenhouse') for job in payload.get('jobs', [])]
+
+    elif kind == 'lever':
+        site = source.get('site')
+        url = f'https://api.lever.co/v0/postings/{site}?mode=json'
+        payload = json.loads(read(url))
+        rows = [normalize(job, source, url, 'lever') for job in payload]
+
+    elif kind == 'workable':
+        account = source.get('account')
+        url = f'https://apply.workable.com/api/v1/widget/accounts/{account}'
+        payload = json.loads(read(url))
+        jobs = payload.get('jobs', payload if isinstance(payload, list) else [])
+        rows = [normalize_workable(job, source, url) for job in jobs]
+
+    elif kind == 'breezy':
+        company = source.get('company_slug')
+        url = f'https://{company}.breezy.hr/json'
+        payload = json.loads(read(url))
+        rows = [normalize_breezy(job, source, url) for job in payload]
+
+    elif kind == 'recruitee':
+        company = source.get('company_slug')
+        url = f'https://{company}.recruitee.com/api/offers/'
+        payload = json.loads(read(url))
+        jobs = payload.get('offers', payload if isinstance(payload, list) else [])
+        rows = [normalize_recruitee(job, source, url) for job in jobs]
+
+    elif kind == 'smartrecruiters':
+        company = source.get('company_slug')
+        url = f'https://api.smartrecruiters.com/v1/companies/{company}/postings?limit=100'
+        payload = json.loads(read(url))
+        rows = [normalize_smartrecruiters(job, source, url) for job in payload.get('content', [])]
+
+    elif kind == 'gupy':
+        company = source.get('company_slug')
+        url = f'https://{company}.gupy.io/api/job_postings'
+        payload = json.loads(read(url))
+        jobs = payload.get('data', payload.get('jobPostings', payload if isinstance(payload, list) else []))
+        rows = [normalize_gupy(job, source, url) for job in jobs]
+
+    elif kind == 'personio':
+        url = source.get('url')
+        raw = read(url)
+        try:
+            payload = json.loads(raw)
+            jobs = payload.get('position', payload.get('positions', payload if isinstance(payload, list) else []))
+            rows = [normalize_personio(job, source, url) for job in jobs]
+        except json.JSONDecodeError:
+            root = ET.fromstring(raw)
+            rows = [normalize_personio_xml(node, source, url) for node in root.findall('.//position')]
+
     else:
-        hosts=set(source.get('allowed_hosts',[]))
-        for url in source.get('urls',[]):
-            if urlparse(url).hostname not in hosts: raise ValueError('URL fora dos hosts autorizados')
-            time.sleep(allowed(url)); rows.extend(normalize(j,source,url) for j in parse_jsonld(read(url)))
-    return [r for r in rows if r]
+        hosts = set(source.get('allowed_hosts', []))
+        for url in source.get('urls', []):
+            if urlparse(url).hostname not in hosts:
+                raise ValueError('URL fora dos hosts autorizados')
+            time.sleep(allowed(url))
+            rows.extend(normalize(job, source, url) for job in parse_jsonld(read(url)))
+
+    return [row for row in rows if row and is_it_job(row)]
 
 def run(config):
     output={}

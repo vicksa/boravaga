@@ -1,4 +1,4 @@
-export type Job = { id:string; title:string; company:string; location:string; level:string; type:string; mode:string; area:string; salary:string; source:string; url:string; description:string; tags:string[]; checked:string; demo?:boolean };
+export type Job = { country?:string; id:string; title:string; company:string; location:string; level:string; type:string; mode:string; area:string; salary:string; source:string; url:string; description:string; tags:string[]; checked:string; demo?:boolean };
 const rows = [
 ["Desenvolvedor(a) front-end júnior","Órbita Digital","São Paulo, SP","Júnior","CLT","Remoto","Tecnologia","R$ 3.500 – R$ 5.000","React,TypeScript,CSS"],
 ["Estágio em desenvolvimento de software","Ponto Tech","Bauru, SP","Não informado","Estágio","Híbrido","Tecnologia","R$ 1.500 – R$ 2.000","JavaScript,Git,Lógica"],

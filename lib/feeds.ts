@@ -1,6 +1,6 @@
 import {database} from "@/lib/database";
 
-type Job = {id:string;title:string;company:string;location:string;level:string;type:string;mode:string;area:string;salary:string;source:string;url:string;description:string;tags:string[];checked:string;expires?:string|null};
+type Job = {country:string;id:string;title:string;company:string;location:string;level:string;type:string;mode:string;area:string;salary:string;source:string;url:string;description:string;tags:string[];checked:string;expires?:string|null};
 
 const SOURCES = [
   {name:"Pague Menos e Extrafarma", kind:"gupy", slug:"paguemenosextrafarma"},
@@ -18,7 +18,8 @@ function level(title:string){return /\b(j[uú]nior|jr)\b/i.test(title)?"Júnior"
 function make(source:string,title:string,company:string,location:string,description:string,url:string,type="Não informado",tags:string[]=[]):Job|null{
   title=clean(title); description=clean(description); if(!title||!IT.test(`${title} ${description}`)||!url)return null;
   const key=`${title}|${company}|${location}`.toLowerCase();
-  return {id:id(key),title,company:clean(company)||source,location:clean(location)||"Não informado",level:level(title),type:/est[aá]gio|intern/i.test(title)?"Estágio":type,mode:/remote|remoto|home office/i.test(`${title} ${description}`)?"Remoto":"Não informado",area:"Tecnologia",salary:"Salário não informado",source,url,description,tags:tags.map(clean).filter(Boolean).slice(0,20),checked:new Date().toISOString(),expires:null};
+  const country=/brasil|brazil|s[aã]o paulo|rio de janeiro|campinas|curitiba|bras[ií]lia|bauru|fortaleza|recife|salvador|belo horizonte|porto alegre|goi[aâ]nia|manaus|florian[oó]polis/i.test(location)?"Brasil":"Exterior";
+  return {country,id:id(key),title,company:clean(company)||source,location:clean(location)||"Não informado",level:level(title),type:/est[aá]gio|intern/i.test(title)?"Estágio":type,mode:/remote|remoto|home office/i.test(`${title} ${description}`)?"Remoto":"Não informado",area:"Tecnologia",salary:"Salário não informado",source,url,description,tags:tags.map(clean).filter(Boolean).slice(0,20),checked:new Date().toISOString(),expires:null};
 }
 async function smart(source:typeof SOURCES[number]){
   const r=await fetch(`https://api.smartrecruiters.com/v1/companies/${source.slug}/postings?limit=100`,{headers:{accept:"application/json"},cache:"no-store"});

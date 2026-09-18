@@ -32,3 +32,5 @@ Exemplo:
 ```
 
 O coletor espera pelo menos três segundos entre consultas de páginas, usa HTTPS, verifica `robots.txt` nas páginas JSON-LD, limita o tamanho da resposta, registra somente metadados da vaga e mantém o link original para candidatura. Ele não tenta descobrir páginas escondidas nem contornar bloqueios. Para ativar uma fonte, confirme também os termos do site e a autorização da empresa.
+
+Feeds públicos são consultados no primeiro acesso ao endpoint de vagas.

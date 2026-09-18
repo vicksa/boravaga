@@ -1,2 +1,6 @@
-import {database} from "@/lib/database";
-export async function GET(){try{const r=await database().prepare("SELECT payload FROM jobs WHERE expires IS NULL OR expires > ? ORDER BY checked DESC LIMIT 1000").bind(new Date().toISOString()).all<{payload:string}>();return Response.json({jobs:r.results.map(r=>JSON.parse(r.payload))});}catch(e){console.error(e);return Response.json({error:"Não foi possível carregar as vagas. Tente novamente."},{status:503});}}
+import { database } from "@/lib/database";
+export const runtime = "nodejs";
+export async function GET(){
+  const store=database();
+  return Response.json({jobs:[...store.jobs.values()].map((value)=>JSON.parse(value))}, {headers:{"Cache-Control":"no-store"}});
+}

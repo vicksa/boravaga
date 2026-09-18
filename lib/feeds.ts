@@ -8,6 +8,7 @@ const SOURCES = [
   {name:"TOPdesk", kind:"smartrecruiters", slug:"TOPdesk"},
   {name:"KOSTAL", kind:"smartrecruiters", slug:"KOSTALGroup"},
   {name:"Nielsen", kind:"smartrecruiters", slug:"TheNielsenCompany"},
+  {name:"SAP Fioneer", kind:"workable", slug:"fioneer"},
 ] as const;
 const IT = /\b(tecnolog|ti\b|it\b|software|desenvolv|program|front[- ]?end|back[- ]?end|full[- ]?stack|devops|dados|data|sistemas|qa\b|suporte técnico|infraestrutura|cloud|nuvem|segurança da informação|cibersegurança|ux\b|ui\b|mobile|android|ios|banco de dados|machine learning|inteligência artificial|scrum master|product manager)\b/i;
 const clean=(v:unknown)=>String(v??"").replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim();
@@ -25,6 +26,12 @@ async function smart(source:typeof SOURCES[number]){
   const data=await r.json() as {content?:any[]};
   return (data.content??[]).map((j:any)=>{const sections=j.jobAd?.sections??{};const description=Object.values(sections).map((v:any)=>typeof v==="object"?v.text??"":String(v)).join(" ");const loc=j.location?.city||j.location?.country||"Não informado";const ref=j.ref||j.id;return make(source.name,j.name,source.name,loc,description,`https://jobs.smartrecruiters.com/${source.slug}/${ref}`,j.typeOfEmployment?.label??"Não informado",j.jobAd?.sections?Object.keys(j.jobAd.sections):[])}).filter(Boolean) as Job[];
 }
+async function workable(source:typeof SOURCES[number]){
+  const r=await fetch(`https://apply.workable.com/api/v1/widget/accounts/${source.slug}`,{headers:{accept:"application/json"},cache:"no-store"});
+  if(!r.ok)throw new Error(`${source.name}: ${r.status}`);
+  const data=await r.json() as any; const jobs=Array.isArray(data)?data:data.jobs??[];
+  return jobs.map((j:any)=>make(source.name,j.title,source.name,j.location?.city??j.location??"Não informado",j.description??"",j.url??`https://apply.workable.com/${source.slug}/`,j.employment_type??"Não informado",j.department?[j.department]:[])).filter(Boolean) as Job[];
+}
 async function gupy(source:typeof SOURCES[number]){
   const r=await fetch(`https://${source.slug}.gupy.io/api/job_postings`,{headers:{accept:"application/json"},cache:"no-store"});
   if(!r.ok)throw new Error(`${source.name}: ${r.status}`);
@@ -32,7 +39,7 @@ async function gupy(source:typeof SOURCES[number]){
   return jobs.map((j:any)=>make(source.name,j.name??j.title,source.name,j.city??j.location,j.description??"",j.jobUrl??j.url??`https://${source.slug}.gupy.io/`,j.type??"Não informado",j.tags??[])).filter(Boolean) as Job[];
 }
 export async function collectPublicFeeds(){
-  const store=database(); const batches=await Promise.allSettled(SOURCES.map(s=>s.kind==="gupy"?gupy(s):smart(s)));
-  for(const b of batches)if(b.status==="fulfilled")for(const job of b.value)store.jobs.set(job.id,JSON.stringify(job));
+  const store=database(); const batches=await Promise.allSettled(SOURCES.map(s=>s.kind==="gupy"?gupy(s):s.kind==="workable"?workable(s):smart(s)));
+  for(const [i,b] of batches.entries()){ if(b.status==="fulfilled")for(const job of b.value)store.jobs.set(job.id,JSON.stringify(job)); else console.error("BoraVaga feed failed", SOURCES[i].name, b.reason); }
   return store.jobs.size;
 }

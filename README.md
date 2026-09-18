@@ -20,3 +20,15 @@ Validar uma fonte, implementar e testar adaptador específico se não houver JSO
 O projeto agora usa Next.js/Node.js e está preparado para Vercel. `vercel.json` agenda `/api/cron/collect` diariamente às 08:00 UTC. Configure `CRON_SECRET` no projeto antes de produção; a rota rejeita chamadas sem `Authorization: Bearer`. Configure `INGEST_TOKEN` se for enviar lotes pelo endpoint `/api/ingest`.
 
 Nesta versão o armazenamento é temporário por instância para manter o protótipo compatível sem banco externo. Para favoritos e vagas persistirem em produção, conecte Postgres/KV pelo Storage da Vercel e troque o adaptador `lib/database.ts`.
+
+## Feeds públicos autorizados
+
+A coleta agora aceita três formatos: `greenhouse` (endpoint público `boards-api.greenhouse.io`), `lever` (endpoint público `api.lever.co`) e `jsonld` (página de carreiras com `JobPosting` em JSON-LD). As fontes vêm desligadas em `collector/sources.json`: troque os placeholders por uma empresa que autorizou o uso, habilite somente aquela entrada e teste antes de publicar. Greenhouse e Lever exigem o identificador público do board da própria empresa; não use o identificador de um portal sem autorização.
+
+Exemplo:
+
+```json
+{"name":"Empresa X","type":"greenhouse","enabled":true,"company":"Empresa X","board_token":"empresa-x","delay_seconds":3}
+```
+
+O coletor espera pelo menos três segundos entre consultas de páginas, usa HTTPS, verifica `robots.txt` nas páginas JSON-LD, limita o tamanho da resposta, registra somente metadados da vaga e mantém o link original para candidatura. Ele não tenta descobrir páginas escondidas nem contornar bloqueios. Para ativar uma fonte, confirme também os termos do site e a autorização da empresa.

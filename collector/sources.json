@@ -1,0 +1,6 @@
+[
+ {"name":"Indeed","enabled":false,"allowed_hosts":["br.indeed.com","www.indeed.com"],"urls":[]},
+ {"name":"InfoJobs","enabled":false,"allowed_hosts":["www.infojobs.com.br"],"urls":[]},
+ {"name":"LinkedIn","enabled":false,"allowed_hosts":["www.linkedin.com"],"urls":[]},
+ {"name":"Catho","enabled":false,"allowed_hosts":["www.catho.com.br"],"urls":[]}
+]

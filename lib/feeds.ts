@@ -10,7 +10,7 @@ const SOURCES = [
   {name:"Nielsen", kind:"smartrecruiters", slug:"TheNielsenCompany"},
   {name:"SAP Fioneer", kind:"workable", slug:"fioneer"},
 ] as const;
-const IT = /(tecnolog\w*|\bti\b|\bit\b|software|desenvolv\w*|program\w*|front[- ]?end|back[- ]?end|full[- ]?stack|devops|dados|\bdata\b|sistemas|\bqa\b|qualidade de software|suporte técnico|infraestrutura|cloud|nuvem|segurança da informação|cibersegurança|\bux\b|\bui\b|mobile|android|ios|banco de dados|machine learning|inteligência artificial|\bia\b|scrum master|product manager|engenharia de software|analista de sistemas|administrador de redes)/i;
+const IT = /(tecnolog\w*|\bti\b|\bit\b|software|desenvolvedor[a-z()]*|developer|programador[a-z()]*|programmer|front[- ]?end|back[- ]?end|full[- ]?stack|devops|dados|\bdata\b|sistemas|\bqa\b|qualidade de software|suporte técnico|infraestrutura|cloud|nuvem|segurança da informação|cibersegurança|\bux\b|\bui\b|mobile|android|ios|banco de dados|machine learning|inteligência artificial|\bia\b|scrum master|product manager|engenharia de software|analista de sistemas|administrador de redes)/i;
 const clean=(v:unknown)=>String(v??"").replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim();
 
 function id(s:string){let h=2166136261;for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619)}return `feed-${(h>>>0).toString(16)}`}
@@ -19,7 +19,7 @@ function make(source:string,title:string,company:string,location:string,descript
   title=clean(title); description=clean(description); if(!title||!IT.test(title)||!url)return null;
   const key=`${title}|${company}|${location}`.toLowerCase();
   const country=/brasil|brazil|\bbr\b|\bbra\b|s[aã]o paulo|rio de janeiro|campinas|curitiba|bras[ií]lia|bauru|fortaleza|recife|salvador|belo horizonte|porto alegre|goi[aâ]nia|manaus|florian[oó]polis/i.test(location)?"Brasil":"Exterior";
-  return {country,id:id(key),title,company:clean(company)||source,location:clean(location)||"Não informado",level:level(title),type:/est[aá]gio|intern/i.test(title)?"Estágio":type,mode:/remote|remoto|home office/i.test(`${title} ${description}`)?"Remoto":"Não informado",area:"Tecnologia",salary:"Salário não informado",source,url,description,tags:tags.map(clean).filter(Boolean).slice(0,20),checked:new Date().toISOString(),expires:null};
+  return {country,id:id(key),title,company:clean(company)||source,location:clean(location)||"Não informado",level:level(title),type:/est[aá]gio|intern/i.test(title)?"Estágio":type,mode:/remote|remoto|home office/i.test(title)?"Remoto":"Não informado",area:"Tecnologia",salary:"Salário não informado",source,url,description,tags:tags.map(clean).filter(Boolean).slice(0,20),checked:new Date().toISOString(),expires:null};
 }
 async function smart(source:typeof SOURCES[number]){
   const listings:any[]=[];
@@ -36,7 +36,7 @@ async function smart(source:typeof SOURCES[number]){
   const details=await Promise.all(candidates.map(async (j:any)=>{
     try { const detailUrl=`https://api.smartrecruiters.com/v1/companies/${source.slug}/postings/${encodeURIComponent(j.id)}`; const d=await fetch(detailUrl,{headers:{accept:"application/json"},cache:"no-store",signal:AbortSignal.timeout(12000)}); return d.ok?await d.json():j; } catch { return j; }
   }));
-  return details.filter((j:any)=>j.active!==false).map((j:any)=>{const sections=j.jobAd?.sections??{};const description=Object.values(sections).map((v:any)=>typeof v==="object"?v.text??"":String(v)).join(" ");const loc=[j.location?.city,j.location?.region,j.location?.country].filter(Boolean).join(", ")||"Não informado";const page=j.postingUrl||`https://jobs.smartrecruiters.com/${source.slug}/${j.id||j.ref}`;return make(source.name,j.name,source.name,loc,`${j.function?.label??""} ${j.department?.label??""} ${description}`,page,j.typeOfEmployment?.label??"Não informado",[j.function?.label,j.department?.label].filter(Boolean))}).filter(Boolean) as Job[];
+  return details.filter((j:any)=>j.active!==false).map((j:any)=>{const sections=j.jobAd?.sections??{};const description=Object.values(sections).map((v:any)=>typeof v==="object"?v.text??"":String(v)).join(" ");const loc=[j.location?.city,j.location?.region,j.location?.country].filter(Boolean).join(", ")||"Não informado";const page=j.postingUrl||`https://jobs.smartrecruiters.com/${source.slug}/${j.id||j.ref}`;const job=make(source.name,j.name,source.name,loc,`${j.function?.label??""} ${j.department?.label??""} ${description}`,page,j.typeOfEmployment?.label??"Não informado",[j.function?.label,j.department?.label].filter(Boolean));if(job&&j.location?.remote===true)job.mode="Remoto";return job}).filter(Boolean) as Job[];
 }
 async function workable(source:typeof SOURCES[number]){
   const r=await fetch(`https://apply.workable.com/api/v1/widget/accounts/${source.slug}`,{headers:{accept:"application/json"},cache:"no-store"});

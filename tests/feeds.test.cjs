@@ -23,7 +23,7 @@ test('Brazil pagination, Portuguese titles, valid application links and source f
       if(u.searchParams.get('offset')==='0')return response({content:Array.from({length:100},(_,i)=>({id:String(i),name:'Operador de caixa'})),totalFound:101});
       return response({content:[{id:'101',name:'Desenvolvedor Júnior',location:{city:'Campinas',country:'br'},ref:'https://api.smartrecruiters.com/v1/companies/BoschGroup/postings/101'}],totalFound:101});
     }
-    return response({id:'101',name:'Desenvolvedor Júnior',location:{city:'Campinas',country:'br'},postingUrl:'https://jobs.smartrecruiters.com/BoschGroup/101',active:true,jobAd:{sections:{jobDescription:{text:'Desenvolvimento de aplicações'}}}});
+    return response({id:'101',name:'Desenvolvedor Júnior',location:{city:'Campinas',country:'br'},postingUrl:'https://jobs.smartrecruiters.com/BoschGroup/101',active:true,jobAd:{sections:{jobDescription:{text:'Desenvolvimento de aplicações. Benefício de assistência remota.'}}}});
   });
   await api.collectPublicFeeds();
   const rows=[...jobs.values()].map(JSON.parse);
@@ -31,6 +31,7 @@ test('Brazil pagination, Portuguese titles, valid application links and source f
   assert.equal(rows[0].country,'Brasil');
   assert.equal(rows[0].source,'SmartRecruiters');
   assert.equal(rows[0].level,'Júnior');
+  assert.equal(rows[0].mode,'Não informado');
   assert.equal(rows[0].url,'https://jobs.smartrecruiters.com/BoschGroup/101');
   assert.ok(requests.some(u=>u.searchParams.get('offset')==='100'));
 });
@@ -38,7 +39,7 @@ test('inactive jobs and unrelated job titles are excluded',async()=>{
   const {api,jobs}=collector(async raw=>{
     const u=new URL(raw);
     if(u.host!=='api.smartrecruiters.com')throw new Error('unavailable');
-    if(u.pathname.endsWith('/postings'))return response({content:[{id:'1',name:'Software Engineer'},{id:'2',name:'Gerente comercial',industry:{label:'Software'}}],totalFound:2});
+    if(u.pathname.endsWith('/postings'))return response({content:[{id:'1',name:'Software Engineer'},{id:'2',name:'Gerente comercial',industry:{label:'Software'}},{id:'3',name:'PROGRAMA JOVEM APRENDIZ'},{id:'4',name:'ENGENHARIA DE DESENVOLVIMENTO DE PRODUTO (FLUIDOS E TÉRMICA)'}],totalFound:2});
     return response({id:'1',name:'Software Engineer',active:false});
   });
   await api.collectPublicFeeds(); assert.equal(jobs.size,0);
